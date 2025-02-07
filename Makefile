@@ -74,3 +74,4 @@ run-service: dep build-service
 	@echo "Running the service..."
 	${DOCKER_COMPOSE} up --build -d
 	@${DOCKER_COMPOSE} logs -f
+
