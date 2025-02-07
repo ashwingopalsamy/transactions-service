@@ -63,6 +63,24 @@ clean:
 	${DOCKER_COMPOSE} down -v
 
 
+# Migration targets
+migrate-up: build-migrations
+	@echo "Running database migrations..."
+	${DOCKER_COMPOSE} run --rm migrations -dir /migrations postgres "$(DB_DSN)" up
+
+migrate-create:
+	@echo "Creating new migration..."
+	docker run --rm ${MIGRATION_IMAGE} -dir /migrations create $(NAME) sql
+
+migrate-down:
+	@echo "Rolling back the last migration..."
+	${DOCKER_COMPOSE} run --rm migrations -dir /migrations postgres "$(DB_DSN)" down
+
+migrate-status:
+	@echo "Checking migration status..."
+	${DOCKER_COMPOSE} run --rm migrations -dir /migrations postgres "$(DB_DSN)" status
+
+
 # Single command: Builds and runs the service with migrations
 run: dep build-service build-migrations migrate-up
 	@echo "Running the service..."
