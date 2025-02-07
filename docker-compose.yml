@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data_volume:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      timeout: 5s
+      retries: 10
+
+  migrations:
+    image: ${MIGRATION_IMAGE:-migration_builder:local}
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./schema/migrations:/migrations
+    environment:
+      DB_DSN: "postgres://postgres:postgres@db:5432/postgres?sslmode=disable"
+      SCRIPTS_PATH: /migrations
+      DB_NAME: postgres
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    image: ${IMAGE:-app:local}
+    ports:
+      - "8080:8080"
+    environment:
+      DB_DSN: "postgres://postgres:postgres@db:5432/postgres?sslmode=disable"
+      LOG_LEVEL: "info"
+      SHUTDOWN_TIMEOUT: "5s"
+    depends_on:
+      - db
+      - migrations
+    restart: on-failure
+
+  test:
+    image: ${IMAGE}
+    environment:
+      DB_DSN: "postgres://postgres:postgres@db:5432/postgres?sslmode=disable"
+    depends_on:
+      - db
+    command: [ "go", "test", "-mod", "vendor", "-v", "-cover", "./..." ]
+
+volumes:
+  pg_data_volume:
