@@ -74,7 +74,7 @@ func TestInsertAccount(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Nil(t, account)
-		assert.Contains(t, err.Error(), "document_number cannot be empty")
+		assert.Contains(t, err.Error(), "null value in column")
 
 		assert.NoError(t, mockDB.ExpectationsWereMet())
 	})
@@ -95,7 +95,7 @@ func TestInsertAccount(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Nil(t, account)
-		assert.Contains(t, err.Error(), "account with this document number already exists")
+		assert.Contains(t, err.Error(), "duplicate key value violates unique constraint")
 
 		assert.NoError(t, mockDB.ExpectationsWereMet())
 	})
