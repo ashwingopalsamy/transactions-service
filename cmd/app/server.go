@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/ashwingopalsamy/transactions-service/internal/handler"
 	"github.com/ashwingopalsamy/transactions-service/internal/middleware"
 	"github.com/ashwingopalsamy/transactions-service/internal/writer"
 	"github.com/go-chi/chi/v5"
@@ -120,7 +121,7 @@ func withPort(port int) Option {
 }
 
 // NewRouter creates a new router with all the routes registered
-func NewRouter() http.Handler {
+func NewRouter(accHandler *handler.AccountsHandler, trxHandler *handler.TransactionsHandler) http.Handler {
 	router := chi.NewRouter()
 
 	// Middlewares
@@ -128,8 +129,19 @@ func NewRouter() http.Handler {
 	router.Use(chimiddleware.Recoverer)
 	router.Use(middleware.SetRequestIDToContext)
 
-	// Register routes
+	// Healthcheck route
 	router.Get("/health", healthCheckHandler)
+
+	// Account Routes
+	router.Route("/v1/accounts", func(r chi.Router) {
+		r.Post("/", accHandler.CreateAccount)
+		r.Get("/{id}", accHandler.GetAccount)
+	})
+
+	// Transaction Routes
+	router.Route("/v1/transactions", func(r chi.Router) {
+		r.Post("/", trxHandler.CreateTransaction)
+	})
 
 	return router
 }

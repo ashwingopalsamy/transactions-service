@@ -10,6 +10,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ashwingopalsamy/transactions-service/internal/handler"
+	"github.com/ashwingopalsamy/transactions-service/internal/repository"
+	"github.com/ashwingopalsamy/transactions-service/internal/service"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -40,8 +43,19 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	// Wiring the architecture layer
+	accRepo := repository.NewAccountsRepository(dbPool)
+	accService := service.NewAccountsService(accRepo)
+	accHandler := handler.NewAccountsHandler(accService)
+
+	trxRepo := repository.NewTransactionsRepository(dbPool)
+	trxService := service.NewTransactionsService(trxRepo, accRepo)
+	trxHandler := handler.NewTransactionHandler(trxService)
+
 	// Setup server
-	router := NewRouter()
+	router := NewRouter(accHandler, trxHandler)
+
+	// Init Server
 	server := NewServer(router, withPort(cfg.Port))
 	go func() {
 		if err := server.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -51,6 +65,23 @@ func main() {
 
 	// Setup graceful shutdown
 	gracefulShutdown(server)
+}
+
+func gracefulShutdown(server HTTPServer) {
+	stopChan := make(chan os.Signal, 1)
+	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
+
+	<-stopChan
+
+	log.Info().Msg("Received termination signal, shutting down gracefully...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Stop(ctx); err != nil {
+		log.Fatal().Err(err).Msg("failed to shut down server gracefully")
+	}
+	log.Info().Msg("Server gracefully stopped")
 }
 
 func loadEnvConfig() *EnvCfg {
@@ -81,21 +112,4 @@ func getEnvAsInt(key string, defaultValue int) int {
 		return intValue
 	}
 	return defaultValue
-}
-
-func gracefulShutdown(server HTTPServer) {
-	stopChan := make(chan os.Signal, 1)
-	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
-
-	<-stopChan
-
-	log.Info().Msg("Received termination signal, shutting down gracefully...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if err := server.Stop(ctx); err != nil {
-		log.Fatal().Err(err).Msg("failed to shut down server gracefully")
-	}
-	log.Info().Msg("Server gracefully stopped")
 }
