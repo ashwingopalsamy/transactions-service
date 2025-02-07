@@ -1,5 +1,5 @@
 -- +goose Up
-    
+
 -- +goose StatementBegin
 INSERT INTO
     operation_types (description)
