@@ -25,13 +25,13 @@ func (s *transactionsService) CreateTransaction(ctx context.Context, accountID, 
 	}
 
 	// Ensure amount is appropriately signed
-	amount, err = s.enforceAmountSign(operationTypeID, amount)
+	amount, err = EnforceAmountSign(operationTypeID, amount)
 	if err != nil {
 		return nil, err
 	}
 
 	// Format the amount to have exactly two decimal places.
-	amount = formatAmount(amount)
+	amount = FormatAmount(amount)
 
 	// Insert transaction record
 	transaction, err := s.trxRepo.InsertTransaction(ctx, accountID, operationTypeID, amount)
@@ -42,8 +42,8 @@ func (s *transactionsService) CreateTransaction(ctx context.Context, accountID, 
 	return transaction, nil
 }
 
-// enforceAmountSign ensures that certain transaction types have positive/negative amounts
-func (s *transactionsService) enforceAmountSign(operationTypeID int64, amount float64) (float64, error) {
+// EnforceAmountSign ensures that certain transaction types have positive/negative amounts
+func EnforceAmountSign(operationTypeID int64, amount float64) (float64, error) {
 	switch operationTypeID {
 	case 1, 2, 3: // Purchases and withdrawals → Negative amount
 		if amount > 0 {
@@ -59,8 +59,8 @@ func (s *transactionsService) enforceAmountSign(operationTypeID int64, amount fl
 	return amount, nil
 }
 
-// formatAmount ensures the float has exactly two decimals. .
-func formatAmount(amount float64) float64 {
+// FormatAmount ensures the float has exactly two decimals. .
+func FormatAmount(amount float64) float64 {
 	formatted := fmt.Sprintf("%.2f", amount)
 
 	var result float64
