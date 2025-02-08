@@ -2,7 +2,7 @@
 
 A RESTful API service written in Go, utilizing PostgreSQL and Docker to manage accounts and transactions.
 
-[![Go - Build](https://github.com/ashwingopalsamy/transactions-service/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/ashwingopalsamy/transactions-service/actions/workflows/go.yml) [![Swagger](https://img.shields.io/badge/Swagger-API%20Spec-white?labelColor=85ea2d&style=plastic&link=https://ashwingopalsamy.github.io/swagger-ui-transactions-service/)](https://ashwingopalsamy.github.io/swagger-ui-transactions-service/) [![Postman](https://img.shields.io/badge/Postman-API%20Doc-white?labelColor=orange&style=plastic&link=https://documenter.getpostman.com/view/19993834/2sAYX8KMKN)](https://documenter.getpostman.com/view/19993834/2sAYX8KMKN)
+[![Go - Build](https://github.com/ashwingopalsamy/transactions-service/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/ashwingopalsamy/transactions-service/actions/workflows/go.yml) [![Swagger](https://img.shields.io/badge/Swagger-API%20Spec-white?labelColor=85ea2d&style=plastic&link=https://ashwingopalsamy.github.io/swagger-ui-transactions-service/)](https://ashwingopalsamy.github.io/swagger-ui-transactions-service/) [![Postman](https://img.shields.io/badge/Postman-API%20Doc-white?labelColor=orange&style=plastic&link=https://documenter.getpostman.com/view/19993834/2sAYX8KMKN)](https://documenter.getpostman.com/view/19993834/2sAYX8KMKN) [![Code Coverage](https://img.shields.io/badge/Code%20Coverage-92%25-white?labelColor=blue&style=plastic&link=https://github.com/ashwingopalsamy/transactions-service/actions/runs/13211963712/job/36886562905)](https://github.com/ashwingopalsamy/transactions-service/actions/runs/13211963712/job/36886562905)
 
 ## Table of Contents
 
