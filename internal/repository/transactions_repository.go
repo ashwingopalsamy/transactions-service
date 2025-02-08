@@ -2,9 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/ashwingopalsamy/transactions-service/internal/middleware"
 	"github.com/rs/zerolog/log"
@@ -26,16 +23,7 @@ func (r *transactionsRepo) InsertTransaction(ctx context.Context, accountID, ope
 	if err != nil {
 		reqID := middleware.GetRequestIDFromContext(ctx)
 		log.Error().Str("request_id", reqID).Err(err).Msg("Database error: failed to insert transaction")
-		if strings.Contains(err.Error(), "violates foreign key constraint") {
-			if strings.Contains(err.Error(), "transactions_account_id_fkey") {
-				return nil, errors.New("invalid account_id: account does not exist")
-			}
-			if strings.Contains(err.Error(), "transactions_operation_type_id_fkey") {
-				return nil, errors.New("invalid operation_type_id: operation type does not exist")
-			}
-			return nil, errors.New("invalid foreign key reference")
-		}
-		return nil, fmt.Errorf("failed to insert transaction: %w", err)
+		return nil, err
 	}
 	return transaction, nil
 }

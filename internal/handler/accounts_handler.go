@@ -2,10 +2,10 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/ashwingopalsamy/transactions-service/internal/middleware"
 	"github.com/ashwingopalsamy/transactions-service/internal/service"
@@ -53,7 +53,26 @@ func (h *AccountsHandler) CreateAccount(w http.ResponseWriter, r *http.Request) 
 	account, err := h.accountService.CreateAccount(r.Context(), req.DocumentNumber)
 	if err != nil {
 		log.Error().Str("request_id", reqID).Err(err).Msg("failed to create account")
-		if strings.Contains(err.Error(), "null value in column") {
+		switch {
+		case errors.Is(err, service.ErrInvalidDocumentNumber):
+			writer.WriteError(
+				w, r.Context(),
+				http.StatusBadRequest,
+				ErrCodeInvalidRequest,
+				ErrTitleInvalidRequest,
+				err.Error(),
+			)
+			return
+		case errors.Is(err, service.ErrAccountAlreadyExists):
+			writer.WriteError(
+				w, r.Context(),
+				http.StatusConflict,
+				ErrCodeConflictErr,
+				ErrTitleConflict,
+				err.Error(),
+			)
+			return
+		default:
 			writer.WriteError(
 				w, r.Context(),
 				http.StatusBadRequest,
@@ -63,25 +82,6 @@ func (h *AccountsHandler) CreateAccount(w http.ResponseWriter, r *http.Request) 
 			)
 			return
 		}
-		if strings.Contains(err.Error(), "unique constraint") {
-			writer.WriteError(
-				w, r.Context(),
-				http.StatusConflict,
-				ErrCodeConflictErr,
-				ErrTitleConflict,
-				err.Error(),
-			)
-			return
-		}
-
-		writer.WriteError(
-			w, r.Context(),
-			http.StatusBadRequest,
-			ErrCodeInvalidRequest,
-			ErrTitleInvalidRequest,
-			err.Error(),
-		)
-		return
 	}
 
 	log.Info().Str("request_id", reqID).Int64("id", account.ID).Msg("account creation successful")
