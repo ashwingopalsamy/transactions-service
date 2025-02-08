@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/ashwingopalsamy/transactions-service/internal/middleware"
+	"github.com/rs/zerolog/log"
 )
 
 func NewTransactionsRepository(db PgxPoolIface) TransactionsRepository {
@@ -21,6 +24,8 @@ func (r *transactionsRepo) InsertTransaction(ctx context.Context, accountID, ope
 		&transaction.EventDate,
 	)
 	if err != nil {
+		reqID := middleware.GetRequestIDFromContext(ctx)
+		log.Error().Str("request_id", reqID).Err(err).Msg("Database error: failed to insert transaction")
 		if strings.Contains(err.Error(), "violates foreign key constraint") {
 			if strings.Contains(err.Error(), "transactions_account_id_fkey") {
 				return nil, errors.New("invalid account_id: account does not exist")

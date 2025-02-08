@@ -3,6 +3,9 @@ package repository
 import (
 	"context"
 	"fmt"
+
+	"github.com/ashwingopalsamy/transactions-service/internal/middleware"
+	"github.com/rs/zerolog/log"
 )
 
 func NewAccountsRepository(db PgxPoolIface) AccountsRepository {
@@ -16,6 +19,8 @@ func (r *accountsRepo) InsertAccount(ctx context.Context, documentNumber string)
 
 	err := r.db.QueryRow(ctx, query, documentNumber).Scan(&account.ID, &account.DocumentNumber)
 	if err != nil {
+		reqID := middleware.GetRequestIDFromContext(ctx)
+		log.Error().Str("request_id", reqID).Err(err).Msg("Database error: failed to insert account")
 		return nil, fmt.Errorf("failed to insert account: %w", err)
 	}
 	return account, nil
@@ -28,6 +33,8 @@ func (r *accountsRepo) GetAccountByID(ctx context.Context, accountID int64) (*Ac
 
 	err := r.db.QueryRow(ctx, query, accountID).Scan(&account.ID, &account.DocumentNumber)
 	if err != nil {
+		reqID := middleware.GetRequestIDFromContext(ctx)
+		log.Error().Str("request_id", reqID).Err(err).Msg("Database error: failed to retrieve account")
 		return nil, err
 	}
 	return account, nil
