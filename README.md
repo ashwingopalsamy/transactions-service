@@ -30,13 +30,14 @@ The service is structured into **Handler → Service → Repository** layers, en
 # Clone the repository and setup the script
 git clone github.com/ashwingopalsamy/transactions-service
 cd transactions-service
+
 sed -i 's/\r$//' run.sh
 chmod +x run.sh
 
 # Single-command Script that builds and runs the service
 ./run.sh
 
-# Else, make use of the Makefile
+# Or, make use of the Makefile
 make run
 ```
 
@@ -77,10 +78,7 @@ curl -X POST http://localhost:8080/v1/transactions \
 _Response:_
 ```json
 {
-  "transaction_id": 10,
-  "account_id": 1,
-  "operation_type_id": 4,
-  "amount": 123.45,
+  "id": 10,
   "event_date": "2025-02-07T10:32:07Z"
 }
 ```
