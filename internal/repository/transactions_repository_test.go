@@ -85,7 +85,7 @@ func TestInsertTransaction(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Nil(t, transaction)
-		assert.Contains(t, err.Error(), "invalid account_id: account does not exist")
+		assert.Contains(t, err.Error(), "violates foreign key constraint \"transactions_account_id_fkey\"")
 
 		assert.NoError(t, mockDB.ExpectationsWereMet())
 	})
@@ -110,7 +110,7 @@ func TestInsertTransaction(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Nil(t, transaction)
-		assert.Contains(t, err.Error(), "invalid operation_type_id: operation type does not exist")
+		assert.Contains(t, err.Error(), "violates foreign key constraint \"transactions_operation_type_id_fkey\"")
 
 		assert.NoError(t, mockDB.ExpectationsWereMet())
 	})

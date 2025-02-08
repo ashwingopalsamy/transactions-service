@@ -16,12 +16,12 @@ func NewAccountsService(accRepo repository.AccountsRepository) AccountsService {
 // CreateAccount creates a new account
 func (s *accountsService) CreateAccount(ctx context.Context, documentNumber string) (*repository.Account, error) {
 	if strings.TrimSpace(documentNumber) == "" {
-		return nil, errors.New("document_number cannot be empty")
+		return nil, ErrInvalidDocumentNumber
 	}
 
 	account, err := s.accRepo.InsertAccount(ctx, documentNumber)
 	if err != nil {
-		return nil, err
+		return nil, determinePgxError(err)
 	}
 
 	return account, nil
@@ -32,9 +32,9 @@ func (s *accountsService) GetAccount(ctx context.Context, accountID int64) (*rep
 	account, err := s.accRepo.GetAccountByID(ctx, accountID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.New("account not found")
+			return nil, ErrAccountNotFound
 		}
-		return nil, errors.New("failed to fetch account")
+		return nil, ErrFailedToFetchAccount
 	}
 	return account, nil
 }

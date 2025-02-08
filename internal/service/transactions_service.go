@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/ashwingopalsamy/transactions-service/internal/repository"
+	"github.com/jackc/pgx/v5"
 )
 
 func NewTransactionsService(trxRepo repository.TransactionsRepository, accRepo repository.AccountsRepository) TransactionsService {
@@ -17,11 +18,14 @@ func (s *transactionsService) CreateTransaction(ctx context.Context, accountID, 
 	// Check if the account exists
 	_, err := s.accRepo.GetAccountByID(ctx, accountID)
 	if err != nil {
-		return nil, errors.New("invalid account_id: account does not exist")
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrInvalidAccountID
+		}
+		return nil, fmt.Errorf("failed to fetch account: %w", err)
 	}
 
 	if amount == 0 {
-		return nil, errors.New("invalid amount: amount must not be zero")
+		return nil, ErrInvalidAmount
 	}
 
 	// Ensure amount is appropriately signed
@@ -36,7 +40,7 @@ func (s *transactionsService) CreateTransaction(ctx context.Context, accountID, 
 	// Insert transaction record
 	transaction, err := s.trxRepo.InsertTransaction(ctx, accountID, operationTypeID, amount)
 	if err != nil {
-		return nil, err
+		return nil, determinePgxError(err)
 	}
 
 	return transaction, nil
@@ -54,7 +58,7 @@ func EnforceAmountSign(operationTypeID int64, amount float64) (float64, error) {
 			amount = -amount
 		}
 	default:
-		return 0, errors.New("invalid operation_type_id: operation type does not exist")
+		return 0, ErrInvalidOperationType
 	}
 	return amount, nil
 }
