@@ -37,3 +37,4 @@ ${DOCKER_COMPOSE} run --rm migrations -dir /migrations postgres "${DB_DSN}" up
 echo "Starting all services..."
 ${DOCKER_COMPOSE} up --build -d
 ${DOCKER_COMPOSE} logs -f
+

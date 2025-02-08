@@ -27,9 +27,11 @@ The service is structured into **Handler → Service → Repository** layers, en
 ## 2. Getting Started
 
 ```sh
-# Clone the repository
+# Clone the repository and setup the script
 git clone github.com/ashwingopalsamy/transactions-service
 cd transactions-service
+sed -i 's/\r$//' run.sh
+chmod +x run.sh
 
 # Single-command Script that builds and runs the service
 ./run.sh
