@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/ashwingopalsamy/transactions-service/internal/repository"
 	"github.com/jackc/pgx/v5"
@@ -16,20 +17,23 @@ func NewTransactionsService(trxRepo repository.TransactionsRepository, accRepo r
 // CreateTransaction validates and creates a transaction
 func (s *transactionsService) CreateTransaction(ctx context.Context, accountID, operationTypeID int64, amount float64) (*repository.Transaction, error) {
 	// Check if the account exists
-	_, err := s.accRepo.GetAccountByID(ctx, accountID)
-	if err != nil {
+	if _, err := s.accRepo.GetAccountByID(ctx, accountID); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrInvalidAccountID
 		}
 		return nil, fmt.Errorf("failed to fetch account: %w", err)
 	}
 
-	if amount == 0 {
-		return nil, ErrInvalidAmount
+	// Validate amount: must be strictly positive.
+	if amount <= 0 {
+		if amount == 0 {
+			return nil, ErrInvalidAmount
+		}
+		return nil, ErrNegativeAmount
 	}
 
 	// Ensure amount is appropriately signed
-	amount, err = EnforceAmountSign(operationTypeID, amount)
+	amount, err := EnforceAmountSign(operationTypeID, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -50,17 +54,12 @@ func (s *transactionsService) CreateTransaction(ctx context.Context, accountID, 
 func EnforceAmountSign(operationTypeID int64, amount float64) (float64, error) {
 	switch operationTypeID {
 	case 1, 2, 3: // Purchases and withdrawals → Negative amount
-		if amount > 0 {
-			amount = -amount
-		}
-	case 4: // Credit Voucher → Positive amount
-		if amount < 0 {
-			amount = -amount
-		}
+		return -math.Abs(amount), nil
+	case 4: // // Credit Voucher → Positive amount
+		return math.Abs(amount), nil
 	default:
 		return 0, ErrInvalidOperationType
 	}
-	return amount, nil
 }
 
 // FormatAmount ensures the float has exactly two decimals. .

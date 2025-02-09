@@ -39,6 +39,7 @@ var (
 	ErrInvalidAccountID     = errors.New("invalid account_id: account does not exist")
 	ErrInvalidOperationType = errors.New("invalid operation_type_id: operation type does not exist")
 	ErrInvalidAmount        = errors.New("invalid amount: amount must not be zero")
+	ErrNegativeAmount       = errors.New("invalid amount: amount must not be negative")
 	ErrTransactionFailed    = errors.New("failed to insert transaction")
 )
 
