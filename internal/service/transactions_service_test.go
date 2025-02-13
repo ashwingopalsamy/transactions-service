@@ -30,11 +30,65 @@ func TestCreateTransaction(t *testing.T) {
 				AddRow(int64(1), "12345678900"))
 
 		mockDB.ExpectQuery(`INSERT INTO transactions`).
-			WithArgs(int64(1), int64(4), float64(100.00)).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "event_date"}).
-				AddRow(int64(1), time.Now()))
+			WithArgs(int64(1), int64(2), float64(-100.00), -100.00).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "event_date", "balance"}).
+				AddRow(int64(1), time.Now(), 100.00))
 
-		transaction, err := trxService.CreateTransaction(ctx, int64(1), 4, 100.00)
+		transaction, err := trxService.CreateTransaction(ctx, int64(1), 2, 100.00)
+		assert.NoError(t, err)
+		assert.NotNil(t, transaction)
+		assert.NoError(t, mockDB.ExpectationsWereMet())
+	})
+
+	t.Run("Payment Discharge Process Successful", func(t *testing.T) {
+		ctx := context.Background()
+		mockDB, err := pgxmock.NewPool()
+		assert.NoError(t, err)
+		defer mockDB.Close()
+
+		accRepo := repository.NewAccountsRepository(mockDB)
+		trxRepo := repository.NewTransactionsRepository(mockDB)
+		trxService := service.NewTransactionsService(trxRepo, accRepo)
+
+		mockDB.ExpectQuery(`SELECT id, document_number FROM accounts WHERE id = \$1`).
+			WithArgs(int64(1)).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "document_number"}).
+				AddRow(int64(1), "12345678900"))
+
+		mockDB.ExpectQuery(`INSERT INTO transactions`).
+			WithArgs(int64(1), int64(4), float64(200.00), 200.00).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "event_date", "balance"}).
+				AddRow(int64(3), time.Now(), 200.00))
+
+		creditTxn := &repository.Transaction{
+			ID:              int64(3),
+			AccountID:       int64(1),
+			OperationTypeID: int64(4),
+			Amount:          200.00,
+			Balance:         200.00,
+		}
+
+		outstandingRows := pgxmock.NewRows([]string{"id", "amount", "balance", "event_date"}).
+			AddRow(int64(1), -100.00, -100.00, time.Now()).
+			AddRow(int64(2), -100.00, -100.00, time.Now())
+
+		mockDB.ExpectQuery(`SELECT id, amount, balance, event_date FROM transactions WHERE account_id = \$1`).
+			WithArgs(creditTxn.AccountID).
+			WillReturnRows(outstandingRows)
+
+		mockDB.ExpectExec(`UPDATE transactions SET balance = \$1, updated_at = CURRENT_TIMESTAMP WHERE id = \$2`).
+			WithArgs(0.00, int64(1)).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+		mockDB.ExpectExec(`UPDATE transactions SET balance = \$1, updated_at = CURRENT_TIMESTAMP WHERE id = \$2`).
+			WithArgs(0.00, int64(2)).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+		mockDB.ExpectExec(`UPDATE transactions SET balance = \$1, updated_at = CURRENT_TIMESTAMP WHERE id = \$2`).
+			WithArgs(0.00, creditTxn.ID).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+		transaction, err := trxService.CreateTransaction(ctx, int64(1), int64(4), 200.00)
 		assert.NoError(t, err)
 		assert.NotNil(t, transaction)
 		assert.NoError(t, mockDB.ExpectationsWereMet())
@@ -164,7 +218,7 @@ func TestCreateTransaction(t *testing.T) {
 				AddRow(int64(1), "12345678900"))
 
 		mockDB.ExpectQuery(`INSERT INTO transactions`).
-			WithArgs(int64(1), int64(4), float64(100.00)).
+			WithArgs(int64(1), int64(4), float64(100.00), 100.00).
 			WillReturnError(errors.New("database error"))
 
 		transaction, err := trxService.CreateTransaction(ctx, 1, 4, 100.00)
@@ -189,7 +243,7 @@ func TestCreateTransaction(t *testing.T) {
 				AddRow(int64(1), "12345678900"))
 
 		mockDB.ExpectQuery(`INSERT INTO transactions`).
-			WithArgs(int64(1), int64(4), float64(100.00)).
+			WithArgs(int64(1), int64(4), float64(100.00), 100.00).
 			WillReturnError(errors.New("violates foreign key constraint transactions_account_id_fkey"))
 
 		transaction, err := trxService.CreateTransaction(ctx, 1, 4, 100.00)
