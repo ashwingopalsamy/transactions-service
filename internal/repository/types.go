@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type AccountsRepository interface {
@@ -13,11 +14,16 @@ type AccountsRepository interface {
 }
 
 type TransactionsRepository interface {
-	InsertTransaction(ctx context.Context, accountID, operationTypeID int64, amount float64) (*Transaction, error)
+	InsertTransaction(ctx context.Context, accountID, operationTypeID int64, amount, balance float64) (*Transaction, error)
+
+	GetOutstandingTransactionsByAccountID(ctx context.Context, accountID int64) ([]*Transaction, error)
+	UpdateTransactionBalance(ctx context.Context, transactionID int64, amount float64) error
 }
 
 type PgxPoolIface interface {
 	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
 }
 
 type accountsRepo struct {
@@ -43,6 +49,7 @@ type Transaction struct {
 	AccountID       int64     `json:"-"`
 	OperationTypeID int64     `json:"-"`
 	Amount          float64   `json:"-"`
+	Balance         float64   `json:"-"`
 	EventDate       time.Time `json:"event_date"`
 	CreatedAt       time.Time `json:"-"`
 	UpdatedAt       time.Time `json:"-"`
